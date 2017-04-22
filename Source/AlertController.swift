@@ -12,7 +12,6 @@ public enum AlertControllerStyle: Int {
     case alert
 }
 
-
 /// The layout of the alert's actions. Only applies to the Alert style alerts, not ActionSheet (see
 /// `AlertControllerStyle`).
 
@@ -35,7 +34,7 @@ public class AlertController: UIViewController {
     }
 
     /// The alert's title. Directly uses `attributedTitle` without any attributes.
-    override public var title: String? {
+    public override var title: String? {
         get { return self.attributedTitle?.string }
         set { self.attributedTitle = newValue.map(NSAttributedString.init) }
     }
@@ -128,8 +127,7 @@ public class AlertController: UIViewController {
     /// - parameter attributedMessage: An optional stylized message
     /// - parameter preferredStyle:    The preferred presentation style of the alert. Default is `alert`.
     public convenience init(attributedTitle: NSAttributedString?, attributedMessage: NSAttributedString?,
-        preferredStyle: AlertControllerStyle = .alert)
-    {
+                            preferredStyle: AlertControllerStyle = .alert) {
         self.init()
         self.preferredStyle = preferredStyle
         self.commonInit()
@@ -193,7 +191,7 @@ public class AlertController: UIViewController {
     ///
     /// - parameter animated:   Whether to present the alert animated.
     /// - parameter completion: An optional closure that's called when the presentation finishes.
-    @objc(presentAnimated:completion:)
+    @objc(presentAnimated: completion:)
     public func present(animated: Bool = true, completion: (() -> Void)? = nil) {
         let topViewController = UIViewController.topViewController()
         topViewController?.present(self, animated: animated, completion: completion)
@@ -203,7 +201,7 @@ public class AlertController: UIViewController {
     ///
     /// - parameter animated:   Whether to dismiss the alert animated.
     /// - parameter completion: An optional closure that's called when the dismissal finishes.
-    @objc(dismissViewControllerAnimated:completion:)
+    @objc(dismissViewControllerAnimated: completion:)
     public override func dismiss(animated: Bool = true, completion: (() -> Void)? = nil) {
         self.presentingViewController?.dismiss(animated: animated, completion: completion)
     }
@@ -225,6 +223,29 @@ public class AlertController: UIViewController {
         if self.behaviors?.contains(.AutomaticallyFocusTextField) == true {
             _ = self.assignResponder()
         }
+
+        if self.preferredStyle == .alert {
+            return
+        }
+
+        self.view.clipsToBounds = true
+        self.alertView.clipsToBounds = true
+
+        if self.attributedTitle == nil && self.attributedMessage == nil {
+            let actionViewSeparatorHeight: CGFloat = 0.5
+            let collectionViewFrame = self.alertView.actionsCollectionView.frame
+            let extraSpacing = collectionViewFrame.origin.y + actionViewSeparatorHeight
+
+            self.alertView.subviews.forEach {
+                $0.frame = CGRect(x: $0.frame.origin.x, y: $0.frame.origin.y - extraSpacing, width: $0.frame.size.width, height: $0.frame.size.height)
+            }
+
+            var alertViewFrame = self.alertView.frame
+            alertViewFrame.origin.y += extraSpacing
+            self.alertView.frame = alertViewFrame
+            self.alertView.layer.masksToBounds = true
+            self.alertView.layer.cornerRadius = self.visualStyle.cornerRadius
+        }
     }
 
     public override var preferredStatusBarStyle: UIStatusBarStyle {
@@ -235,7 +256,7 @@ public class AlertController: UIViewController {
 
     private func listenForKeyboardChanges() {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardChange),
-            name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
+                                               name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
     }
 
     @objc
@@ -281,20 +302,20 @@ public class AlertController: UIViewController {
         let margins = self.visualStyle.margins
 
         switch self.preferredStyle {
-            case .actionSheet:
-                let bounds = self.presentingViewController?.view.bounds ?? self.view.bounds
-                let width = min(bounds.width, bounds.height) - margins.left - margins.right
-                self.alertView.sdc_pinWidth(width * self.visualStyle.width)
-                self.alertView.sdc_horizontallyCenterInSuperview()
-                self.alertView.sdc_alignEdges(withSuperview: [.bottom], insets: margins)
-                self.alertView.sdc_setMaximumHeightToSuperviewHeight(withOffset: -margins.top)
+        case .actionSheet:
+            let bounds = self.presentingViewController?.view.bounds ?? self.view.bounds
+            let width = min(bounds.width, bounds.height) - margins.left - margins.right
+            self.alertView.sdc_pinWidth(width * self.visualStyle.width)
+            self.alertView.sdc_horizontallyCenterInSuperview()
+            self.alertView.sdc_alignEdges(withSuperview: [.bottom], insets: margins)
+            self.alertView.sdc_setMaximumHeightToSuperviewHeight(withOffset: -margins.top)
 
-            case .alert:
-                self.alertView.sdc_pinWidth(self.visualStyle.width)
-                self.alertView.sdc_centerInSuperview()
-                let maximumHeightOffset = -(margins.top + margins.bottom)
-                self.alertView.sdc_setMaximumHeightToSuperviewHeight(withOffset: maximumHeightOffset)
-                self.alertView.setContentCompressionResistancePriority(500, for: .vertical)
+        case .alert:
+            self.alertView.sdc_pinWidth(self.visualStyle.width)
+            self.alertView.sdc_centerInSuperview()
+            let maximumHeightOffset = -(margins.top + margins.bottom)
+            self.alertView.sdc_setMaximumHeightToSuperviewHeight(withOffset: maximumHeightOffset)
+            self.alertView.setContentCompressionResistancePriority(500, for: .vertical)
         }
     }
 

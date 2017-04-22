@@ -24,7 +24,7 @@ final class DemoViewController: UITableViewController {
         let title = self.titleTextField.content
         let message = self.messageTextField.content
         let style = AlertControllerStyle(rawValue: self.styleControl.selectedSegmentIndex)!
-        let alert = AlertController(title: title, message: message, preferredStyle: style)
+        let alert = AlertController(title: nil, message: nil, preferredStyle: style)
 
         let textFields = Int(self.textFieldCountTextField.content ?? "0")!
         for _ in 0..<textFields {
